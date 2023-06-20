@@ -20,7 +20,7 @@ ISNULL(InitialMarginMcx,0) as IMMCX,ISNULL(OtherMarginMcx,0) as OthersMCX,ISNULL
 ISNULL(InitialMarginNcdx,0) as IMNCDX,ISNULL(OtherMarginNcdx,0) as OthersNCDX,ISNULL(M2MNcdx,0) as M2MNCDX,
 ISNULL(SPANMarginCOMM,0) as SPANCOM,ISNULL([Extreme_Loss_MarginCOMM],0) as ELMCOM,ISNULL(M2MCOMM,0) as M2MCOM,
 ISNUll(TotalPeak1,0) as Total1,isnull(TotalPeak2,0) as Total2,ISNULL(TotalPeak3,0) as Total3,ISNULL(TotalPeak4,0) as Total4, ISNULL(NULL,0) as Filler1,
-isNULL([Total_T],0) as TotalT,ISNULL([Total_T_1],0) as [TotallT+1],ISNULL([Total_T_2],0) as [TotalT+2],
+isNULL(round([Total_T],2),0) as TotalT,ISNULL([Total_T_1],0) as [TotallT+1],ISNULL([Total_T_2],0) as [TotalT+2],
 ISNULL(md.Total,0) as 'TotMargin',isNULL(pd.PledgeVal,0) as Pledge,
 ISNULL(fa.CollVal,0) as 'PledgeRequired', ISNULL(NULL,0) as Filler2,
 ISNULL(round(epip.Val,2),0) as 'EPI_T-1DAY',ISNULL(NULL,0) as 'EPIT(to reduce on T+2)',ISNULL(round(epic.Val,2),0) as 'EPI_TDAY',
@@ -40,50 +40,69 @@ full outer join (Select Distinct ClientCode,Total from Derivatives) as dr on md.
 full outer join (Select Distinct  ClientCode,sum(LedgerBalanceT) as LedgerBalanceT from LedgerBalance group by ClientCode) as lb on md.ClientCode = lb.ClientCode
 where  md.ClientCode is NOT NULL
 --and ReportDate = 20230607
-and  md.ClientCode = '080184'
+and  md.ClientCode = '02DS28'
 group by md.[ClientCode],MinMargin,[Additional_Margin],MTM,SPANMarginC,SPANMarginCOMM,SPANMarginF,[Extreme_Loss_MarginC],[Extreme_Loss_MarginCOMM],[Extreme_Loss_MarginF]
 ,M2MF,M2MC,M2MCOMM,M2MMcx,M2MNcdx,OtherMarginMcx,OtherMarginNcdx,[VARM_ELM],DeliveryMarginF,InitialMarginMcx,InitialMarginNcdx,TotalPeak1
 ,TotalPeak2,TotalPeak3,TotalPeak4,[Total_T],[Total_T_1],[Total_T_2]
 ,md.Total,PledgeVal,CollVal,epic.Val,epip.Val,pay.Credit,fa.FundedAmt,dr.Total,lb.LedgerBalanceT
 
-)
+),
 
+CTE1 as (
 select ClientCode,[VARM+ELM],MinMargin,[Additional Margin CASH],M2MCASH,SPANFNO,ELMFNO,DellMarginFNO,
 M2MFNO,SPANCDS,ELMCDS,M2MCDS,IMMCX,OthersMCX,M2MMCX,IMNCDX,OthersNCDX,M2MNCDX,
 SPANCOM,ELMCOM,M2MCOM,Total1,Total2,Total3,Total4,Filler1,TotalT,[TotallT+1],[TotalT+2],TotMargin,Pledge,PledgeRequired,Filler2
 ,[EPI_T-1DAY],[EPIT(to reduce on T+2)],EPI_TDAY
 ,[EPI_T+1],[EPI_T+2],Filler3,
 Payout_T,Filler4,[Funded Amount],[ Deriv T-1 Debit Bill],Filler5
-
 ,(convert(float,Payout_T) + Filler4 + [ Deriv T-1 Debit Bill]) as 'AddiAssetsforPeak',
 ISNULL(NULL,0) as
 'LedgerT',ISNULL(NULL,0) as 'FNO',ISNULL(NULL,0) as 'CDS',ISNULL(NULL,0)
 as 'MCX',ISNULL(NULL,0) as 'NCDEX',LedgerBalance,
-
-ceiling(convert(float, Pledge)-PledgeRequired + EPI_TDAY + LedgerBalance + Filler3 + [Funded Amount]) as 'Assets'---AE5-AF5+AJ5+AY5+AM5+AP5
+round(convert(float, Pledge)-PledgeRequired + EPI_TDAY + LedgerBalance + Filler3 + [Funded Amount],2) as 'Assets'---AE5-AF5+AJ5+AY5+AM5+AP5
 from CTE
 
---=AE5-AF5+AJ5+AY5+AM5+AP5
+)
 
---AE5 : Pledge 
---Af5 : pledge requried 
---Aj5 : Epitday 
---ay5 : ledgerbalance 
---am5 : filler3
---ap5 : Funded Amount
+Select *,
+
+case when Assets<0 OR   Assets < TotalT then Assets
+when Assets<0 OR   TotalT < Assets then  TotalT
+else 0
+end as 'Comparision',ISNULL(NULL,0) as 'NULLData'
+
+from CTE1
+
+--SELECT
+--  ColumnA,
+--  ColumnB,
+--  sub.calccolumn1,
+--  sub.calccolumn1 / ColumnC AS calccolumn2
+--FROM tab t
+--CROSS APPLY (SELECT t.ColumnA + t.ColumnB AS calccolumn1 FROM dual) sub;
+
+----=AE5-AF5+AJ5+AY5+AM5+AP5
+
+----AE5 : Pledge 
+----Af5 : pledge requried 
+----Aj5 : Epitday 
+----ay5 : ledgerbalance 
+----am5 : filler3
+----ap5 : Funded Amount
 
 
---MG13Data --Done in rpt 
---Payout--rpt
+----MG13Data --Done in rpt 
+----Payout--rpt
 
---select * from  MG13Data where ClientCode = '080184'
+----select * from  MG13Data where ClientCode = '080184'
 
-select ClientCode,min(Valuef)  as fsfsdfff
+--select ClientCode,min(Valuef)  as fsfsdfff
 
 
-from (select ClientCode ,PledgeVal  as Valuef  from Pledge 
-union
-select ClientCode ,FSPledgeVal  as Valuef  from Pledge )cc
-group by ClientCode
+--from (select ClientCode ,PledgeVal  as Valuef  from Pledge 
+--union
+--select ClientCode ,FSPledgeVal  as Valuef  from Pledge )cc
+--where ClientCode ='92246011'
+--group by ClientCode
 
 

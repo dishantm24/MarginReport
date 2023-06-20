@@ -326,7 +326,7 @@ delete from EPICURRENT where Party = 'Party'
 drop table MG13Data
 truncate  table Derivatives
 
-
+select * from ledgerbalance
 
 
 Ledger baalance ,derivatives ,import rpt in csv as text format and then use import wizard for flat file 
