@@ -299,11 +299,16 @@ exec xp_cmdshell 'bcp venturaDb..Pledge in D:\MarginReportScriptsandDocs\MarginR
 
 exec xp_cmdshell 'bcp venturaDb..FundedValue in D:\MarginReportScriptsandDocs\MarginReportAllFiles\FundedAmount.rpt -c -t, -T -S VSL1184'--FundedValue 
 
-exec xp_cmdshell 'bcp venturaDb..EPIPREV in D:\MarginReportScriptsandDocs\MarginReportAllFiles\EPIPREV.rpt -c -t, -T -S VSL1184'--EPIPREV 
+exec xp_cmdshell 'bcp venturaDb..[EPIT-1] in D:\MarginReportScriptsandDocs\MarginReportAllFiles\EPIT-1.rpt -c -t, -T -S VSL1184'--EPIT-1 
 
 
-exec xp_cmdshell 'bcp venturaDb..EPICURRENT in D:\MarginReportScriptsandDocs\MarginReportAllFiles\EPICURRENT.rpt -c -t, -T -S VSL1184'--EPICURRENT 
+exec xp_cmdshell 'bcp venturaDb..EPIT in D:\MarginReportScriptsandDocs\MarginReportAllFiles\EPIT.rpt -c -t, -T -S VSL1184'--EPIT 
 
+
+exec xp_cmdshell 'bcp venturaDb..[EPIT+1] in D:\MarginReportScriptsandDocs\MarginReportAllFiles\EPIT+1.rpt -c -t, -T -S VSL1184'--EPIT+1 
+
+
+exec xp_cmdshell 'bcp venturaDb..[EPIT+2] in D:\MarginReportScriptsandDocs\MarginReportAllFiles\EPIT+2.rpt -c -t, -T -S VSL1184'--EPIT+2 
 
 
 exec xp_cmdshell 'bcp venturaDb..Derivatives in D:\MarginReportScriptsandDocs\MarginReportAllFiles\Derivatives.csv -c -t, -T -S VSL1184'--EPICURRENT 
@@ -312,21 +317,24 @@ exec xp_cmdshell 'bcp venturaDb..Derivatives in D:\MarginReportScriptsandDocs\Ma
 exec xp_cmdshell 'bcp venturaDb..MG13Data in D:\MarginReportScriptsandDocs\MarginReportAllFiles\MG13230608_072709.csv -c -t, -T -S VSL1184'--EPICURRENT 
 
 
-
+truncate table [EPIT+1]
 
 BULK insert venturaDb..LedgerBalance from 'D:\MarginReportScriptsandDocs\MarginReportAllFiles\LedgerBalance_old.csv'
 with(FirstROW = 2 ,FIELDTERMINATOR = ',')
 
 select * from MG13Data where ClientCode = '080184'
 
-delete from EPICURRENT where Party = 'Party'
+delete from [EPIT+1] where Party = 'Party'
 
-
+Select * from [EPIT+2]
 
 drop table MG13Data
 truncate  table Derivatives
 
-select * from ledgerbalance
+select * from [EPIT+1]
 
+drop table LedgerBalance_new
+select * from LedgerBalance_new
 
-Ledger baalance ,derivatives ,import rpt in csv as text format and then use import wizard for flat file 
+--Ledger baalance ,derivatives ,MG13 import rpt in csv as text
+--format and then use import wizard for flat file 
